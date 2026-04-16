@@ -1,0 +1,9 @@
+to activate the env
+.\test\Scripts\Activate.ps1 
+.\test\Scripts\Activate.ps1 
+
+path for monkey patch code
+Y:\Hackathon\Bangalore\Anchor\AI event 4-2-2026
+
+
+(test) PS C:\Users\GenAIBLRTKCUSR13\Documents\team25> streamlit run test2.py

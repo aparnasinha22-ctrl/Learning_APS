@@ -1,0 +1,12 @@
+import requests
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+_old_request = requests.Session.request
+
+def _patched_request(self, method, url, **kwargs):
+    kwargs["verify"] = False
+    return _old_request(self, method, url, **kwargs)
+
+requests.Session.request = _patched_request

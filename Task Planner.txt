@@ -1,0 +1,159 @@
+📁 Project Structure (create this manually)
+task_planner/
+│── main.py
+│── agents.py
+│── memory.py
+│── llm.py
+│── .env
+1️⃣ .env (store your API key)
+OPENAI_API_KEY=your_api_key_here
+2️⃣ llm.py (handles LLM calls)
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+
+load_dotenv()
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def call_llm(prompt):
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",  # cheap + fast
+        messages=[
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.7
+    )
+    return response.choices[0].message.content.strip()
+3️⃣ agents.py (all agents live here)
+from llm import call_llm
+
+
+def planner_agent(goal):
+    prompt = f"""
+    You are a planner.
+
+    Break this goal into 5-7 simple actionable steps.
+
+    Goal: {goal}
+
+    Return only a numbered list.
+    """
+    response = call_llm(prompt)
+
+    tasks = [t.strip() for t in response.split("\n") if t.strip()]
+    return tasks
+
+
+def executor_agent(task, memory):
+    prompt = f"""
+    You are an executor.
+
+    Previously completed work:
+    {memory}
+
+    Now execute this task step-by-step:
+    {task}
+
+    Be concise and practical.
+    """
+    return call_llm(prompt)
+
+
+def manager_agent(goal, tasks, memory):
+    prompt = f"""
+    You are a manager.
+
+    Goal: {goal}
+
+    Completed tasks:
+    {memory}
+
+    Remaining tasks:
+    {tasks}
+
+    Decide the next best task to execute.
+    If everything is done, reply ONLY with: DONE
+    Otherwise return the exact task.
+    """
+    return call_llm(prompt).strip()
+4️⃣ memory.py (simple memory system)
+class Memory:
+    def __init__(self):
+        self.data = []
+
+    def add(self, task, result):
+        self.data.append({
+            "task": task,
+            "result": result
+        })
+
+    def get_all(self):
+        return self.data
+
+    def __str__(self):
+        return "\n".join(
+            [f"{i+1}. {item['task']} -> {item['result']}"
+             for i, item in enumerate(self.data)]
+        )
+5️⃣ main.py (run everything 🚀)
+from agents import planner_agent, executor_agent, manager_agent
+from memory import Memory
+
+
+def main():
+    goal = input("Enter your goal: ")
+
+    print("\n[Planner] Generating tasks...\n")
+    tasks = planner_agent(goal)
+
+    for t in tasks:
+        print("-", t)
+
+    memory = Memory()
+
+    print("\n[Execution Started]\n")
+
+    while True:
+        next_task = manager_agent(goal, tasks, str(memory))
+
+        if "DONE" in next_task.upper():
+            print("\n✅ Goal Completed!")
+            break
+
+        print(f"\n[Manager] Next Task: {next_task}")
+
+        result = executor_agent(next_task, str(memory))
+
+        print(f"[Executor Result]: {result}")
+
+        memory.add(next_task, result)
+
+
+if __name__ == "__main__":
+    main()
+▶️ How to Run
+1. Activate virtual environment
+source venv/bin/activate   # macOS/Linux
+venv\Scripts\activate      # Windows
+2. Install dependencies
+pip install openai python-dotenv
+3. Run
+python main.py
+✅ Example Input
+Enter your goal: Plan a 2-day trip to Goa
+⚠️ Common Beginner Issues
+❌ API key not working → check .env file
+❌ Module not found → run pip install
+❌ Weird outputs → print prompts for debugging
+💡 What You Built
+
+You now have:
+
+✔ Planner agent
+✔ Executor agent
+✔ Manager agent
+✔ Memory system
+✔ Autonomous loop
+
+That’s already a real multi-agent system, not just a toy.
